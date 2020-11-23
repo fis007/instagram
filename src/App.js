@@ -1,31 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import Post from "./Post";
+import { db } from "./firebase";
+import { makeStyles, Modal, SimpleModal } from "@material-ui/core";
+
+function getModalStyle() {
+  const top = 50;
+  const left = 50;
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`,
+  };
+}
+
+const useStyles = makeStyles((theme) => ({
+  paper: {
+    position: "absolute",
+    width: 400,
+    backgroundColor: theme.palette.background.paper,
+    border: "2px solid #000",
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(2, 4, 3),
+  },
+}));
 
 function App() {
-  const [posts, setPosts] = useState([
-    {
-      username: "Davinchey",
-      caption: "Dope stuff happening",
-      imageUrl:
-        "https://images.unsplash.com/photo-1469443168033-4623821959af?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxleHBsb3JlLWZlZWR8MXx8fGVufDB8fHw%3D&auto=format&fit=crop&w=700&q=60",
-    },
-    {
-      username: "Phil Haus",
-      caption: "Yes it works",
-      imageUrl:
-        "https://images.unsplash.com/photo-1499063078284-f78f7d89616a?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxleHBsb3JlLWZlZWR8M3x8fGVufDB8fHw%3D&auto=format&fit=crop&w=700&q=60",
-    },
-  ]);
+  const classes = useStyles();
+  const [modalStyle] = useState(getModalStyle);
+
+  const [posts, setPosts] = useState([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    db.collection("posts").onSnapshot((snapshot) => {
+      setPosts(
+        snapshot.docs.map((doc) => ({
+          id: doc.id,
+          post: doc.data(),
+        }))
+      );
+    });
+  }, []);
 
   return (
     <div className="app">
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <div style={modalStyle} className={classes.paper}>
+          <h2>I am a modal</h2>
+        </div>
+      </Modal>
+
       <div className="app__header">
         <img src="https://www.instagram.com/static/images/web/mobile_nav_type_logo.png/735145cfe0a4.png" />
       </div>
       <h1>Hello Everyone</h1>
-      {posts.map((post) => (
+      {posts.map(({ id, post }) => (
         <Post
+          key={id}
           username={post.username}
           caption={post.caption}
           imageUrl={post.imageUrl}
